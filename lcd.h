@@ -1,0 +1,293 @@
+#ifndef LCD_H
+#define LCD_H
+
+#include "pico/stdlib.h"
+#include "pico/time.h"
+
+#define BLINK true
+#define NO_BLINK false
+
+// Pin Positions in Array
+#define RS 4
+#define E 5
+// Pin Values
+#define HIGH 1
+#define LOW 0
+// RS meaning
+#define COMMAND 0
+#define DATA 1
+
+class LCD
+{
+private:
+    int LCDPins[6];
+    uint32_t LCDmask_c = 0; // with clock
+    uint32_t LCDmask = 0;   // without clock
+    int no_chars;
+    int no_lines;
+    int cursor_status[2] = {0, 0};
+
+    uint32_t pin_values_to_mask(uint raw_bits[], int length);
+    void uint_into_8bits(uint raw_bits[], uint one_byte);
+    void send_raw_data_one_cycle(uint raw_bits[]);
+    void send_full_byte(uint rs, uint databits[]);
+    void send_byte(uint rs, uint8_t data);
+
+public:
+    LCD(int bit4_pin, int bit5_pin, int bit6_pin, int bit7_pin, int rs_pin, int e_pin, int width, int height);
+
+    void clear();
+    void cursor_off();
+    void cursor_on();
+    void cursor_on(bool blink);
+    void init();
+    void goto_pos(int pos, int line);
+    void print(const char *str);
+    void print_wrapped(const char *str);
+    void display_on();
+    void display_off();
+    void write(uint8_t data);
+};
+
+void LCD::send_byte(uint rs, uint8_t data)
+{
+    // send upper nibble
+    uint rawbits[5];
+    rawbits[4] = rs;
+
+    for (int i = 0; i < 4; i++)
+    {
+        rawbits[i] = (data >> (7 - i)) & 0x01;
+    }
+
+    send_raw_data_one_cycle(rawbits);
+
+    // Send Lower nibble
+    for (int i = 0; i < 4; i++)
+    {
+        rawbits[i] = (data >> (3 - i)) & 0x01;
+    }
+
+    send_raw_data_one_cycle(rawbits);
+}
+
+uint32_t LCD::pin_values_to_mask(uint raw_bits[], int length)
+{
+    uint32_t result = 0;
+    uint pinArray[32];
+    for (int i = 0; i < 32; i++)
+    {
+        pinArray[i] = 0;
+    }
+    for (int i = 0; i < length; i++)
+    {
+        pinArray[this->LCDPins[i]] = raw_bits[i];
+    }
+    for (int i = 0; i < 32; i++)
+    {
+        result = result << 1;
+        result += pinArray[31 - i];
+    }
+    return result;
+}
+
+void LCD::uint_into_8bits(uint raw_bits[], uint one_byte)
+{
+    for (int i = 0; i < 8; i++)
+    {
+        raw_bits[7 - i] = one_byte % 2;
+        one_byte = one_byte >> 1;
+    }
+}
+
+void LCD::send_raw_data_one_cycle(uint raw_bits[])
+{
+    uint32_t bit_value = pin_values_to_mask(raw_bits, 5);
+    gpio_put_masked(this->LCDmask, bit_value);
+    gpio_put(this->LCDPins[E], HIGH);
+    sleep_us(100);
+    gpio_put(this->LCDPins[E], LOW);
+    sleep_us(100);
+}
+
+void LCD::send_full_byte(uint rs, uint databits[])
+{
+    // send upper nibble (MSN)
+    uint rawbits[5];
+    rawbits[4] = rs;
+    for (int i = 0; i < 4; i++)
+    {
+        rawbits[i] = databits[i];
+    }
+    send_raw_data_one_cycle(rawbits);
+    // send lower nibble (LSN)
+    for (int i = 0; i < 4; i++)
+    {
+        rawbits[i] = databits[i + 4];
+    }
+    send_raw_data_one_cycle(rawbits);
+}
+
+LCD::LCD(int bit4_pin, int bit5_pin, int bit6_pin, int bit7_pin, int rs_pin, int e_pin, int width, int height)
+{
+    this->LCDPins[0] = bit7_pin;
+    this->LCDPins[1] = bit6_pin;
+    this->LCDPins[2] = bit5_pin;
+    this->LCDPins[3] = bit4_pin;
+    this->LCDPins[4] = rs_pin;
+    this->LCDPins[5] = e_pin;
+    this->no_chars = width;
+    this->no_lines = height;
+}
+
+void LCD::clear()
+{
+    uint clear_display[8] = {0, 0, 0, 0, 0, 0, 0, 1};
+    send_full_byte(COMMAND, clear_display);
+    sleep_ms(10);
+}
+
+void LCD::cursor_off()
+{
+    uint no_cursor[8] = {0, 0, 0, 0, 1, 1, 0};
+    send_full_byte(COMMAND, no_cursor);
+    this->cursor_status[0] = 0;
+    this->cursor_status[1] = 0;
+}
+
+void LCD::cursor_on()
+{
+    uint command_cursor[8] = {0, 0, 0, 0, 1, 1, 1, 1};
+    send_full_byte(COMMAND, command_cursor);
+    this->cursor_status[0] = 1;
+    this->cursor_status[1] = 1;
+}
+
+void LCD::cursor_on(bool blink)
+{
+    uint command_cursor[8] = {0, 0, 0, 0, 1, 1, 1, 0};
+    if (blink)
+        command_cursor[7] = 1;
+    send_full_byte(COMMAND, command_cursor);
+    this->cursor_status[0] = 1;
+    this->cursor_status[1] = command_cursor[7];
+}
+
+void LCD::display_off()
+{
+    uint command_display[8] = {0, 0, 0, 0, 1, 0, 0, 0};
+    command_display[7] = this->cursor_status[1];
+    command_display[6] = this->cursor_status[0];
+    send_full_byte(COMMAND, command_display);
+}
+
+void LCD::display_on()
+{
+    uint command_display[8] = {0, 0, 0, 0, 1, 1, 0, 0};
+    command_display[7] = this->cursor_status[1];
+    command_display[6] = this->cursor_status[0];
+    send_full_byte(COMMAND, command_display);
+}
+
+void LCD::init()
+{
+    uint all_ones[6] = {1, 1, 1, 1, 1, 1};
+    uint set_function_8[5] = {0, 0, 1, 1, 0};
+    uint set_function_4a[5] = {0, 0, 1, 0, 0};
+
+    uint set_function_4[8] = {0, 0, 1, 0, 0, 0, 0, 0};
+    uint cursor_set[8] = {0, 0, 0, 0, 0, 1, 1, 0};
+    uint display_prop_set[8] = {0, 0, 0, 0, 1, 1, 0, 0};
+
+    // set mask, initialize masked pins and set to LOW
+    this->LCDmask_c = pin_values_to_mask(all_ones, 6);
+    this->LCDmask = pin_values_to_mask(all_ones, 5);
+    gpio_init_mask(this->LCDmask_c);          // init all LCD Pins
+    gpio_set_dir_out_masked(this->LCDmask_c); // Set all pins as output
+    gpio_clr_mask(this->LCDmask_c);           // Set all pins as LOW
+
+    // Set LCD to 4-bit mode and 1 or 2 lines
+    if (no_lines == 2 || no_lines == 4)
+        set_function_4[4] = 1;
+    send_raw_data_one_cycle(set_function_8);
+    send_raw_data_one_cycle(set_function_8);
+    send_raw_data_one_cycle(set_function_8);
+    send_raw_data_one_cycle(set_function_4a);
+
+    // ready up
+    send_full_byte(COMMAND, set_function_4);
+    send_full_byte(COMMAND, cursor_set);
+    send_full_byte(COMMAND, display_prop_set);
+    clear();
+
+    this->cursor_status[0] = 0;
+    this->cursor_status[1] = 0;
+}
+
+void LCD::goto_pos(int pos_i, int line)
+{
+    uint eight_bits[8];
+    uint pos = (uint)pos_i;
+    switch (no_lines)
+    {
+    case 2:
+        pos = 64 * line + pos + 0b10000000;
+        break;
+    case 4:
+        if (line == 0)
+        {
+            pos = pos + 0b10000000;
+        }
+        else if (line == 1)
+        {
+            pos = 64 + pos + 0b10000000;
+        }
+        else if (line == 2)
+        {
+            pos = 20 + pos + 0b10000000;
+        }
+        else if (line == 3)
+        {
+            pos = 84 + pos + 0b10000000;
+        }
+        break;
+    default:
+        pos = pos;
+    }
+    uint_into_8bits(eight_bits, pos);
+    send_full_byte(COMMAND, eight_bits);
+}
+
+void LCD::print(const char *str)
+{
+    uint eight_bits[8];
+    int i = 0;
+    while (str[i] != 0)
+    {
+        uint_into_8bits(eight_bits, (uint)(str[i]));
+        send_full_byte(DATA, eight_bits);
+        ++i;
+    }
+}
+
+void LCD::print_wrapped(const char *str)
+{
+    uint eight_bits[8];
+    int i = 0;
+    goto_pos(0, 0);
+    while (str[i] != 0)
+    {
+        uint_into_8bits(eight_bits, (uint)(str[i]));
+        send_full_byte(DATA, eight_bits);
+        ++i;
+        if (i % no_chars == 0)
+            goto_pos(0, i / no_chars);
+    }
+}
+
+void LCD::write(uint8_t data)
+{
+    send_byte(DATA, data);
+}
+
+#endif
