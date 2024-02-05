@@ -75,52 +75,39 @@ public:
 bool Player::init()
 {
     if (sd_init_driver())
-    {
         return true;
-    }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 bool Player::mountFileSystem()
 {
     fr = f_mount(&fs, "0:", 1);
+
     if (fr == FR_OK)
-    {
         return true;
-    }
-    else
-    {
-        return false;
-    }
+    
+    return false;
 }
 
 bool Player::unmountCard()
 {
     fr = f_unmount("0:");
+
     if (fr == FR_OK)
-    {
         return true;
-    }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 bool Player::openCard()
 {
     fr = f_opendir(&dir, "0:/");
+
     if (fr == FR_OK)
-    {
         return true;
-    }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 void Player::readFileNames(const char ***files, int *file_count)
@@ -311,13 +298,9 @@ void Player::parse_midi_track(const MidiTrack *track)
 const char *Player::getNoteName(uint8_t note_value)
 {
     if (note_value < 128)
-    {
         return note_names[note_value];
-    }
-    else
-    {
-        return "NA";
-    }
+    
+    return "NA";
 }
 
 const char *Player::readFile(const char *fileName)

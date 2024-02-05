@@ -80,13 +80,7 @@ bool Inputs::select()
             selState = selReading;
 
             if (selState == 0)
-            {
                 return true;
-            }
-            else
-            {
-                return false;
-            }
         }
     }
     return false;
@@ -106,13 +100,7 @@ bool Inputs::scroll()
             scrollState = scrollReading;
 
             if (scrollState == 0)
-            {
                 return true;
-            }
-            else
-            {
-                return false;
-            }
         }
     }
     return false;
