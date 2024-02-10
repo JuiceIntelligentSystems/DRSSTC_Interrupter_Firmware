@@ -185,7 +185,7 @@ void pwm_irq_handler()
             }
             if (duty_cycle > max_duty_cycles[index])
             {
-                duty_cycle > max_duty_cycles[index];
+                duty_cycle = max_duty_cycles[index];
             }
 
             set_transmitter_freq_duty(slice_num_tx, tx_channel, frequency, duty_cycle);
