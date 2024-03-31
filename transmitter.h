@@ -176,16 +176,18 @@ void pwm_irq_handler()
             // For some unknown reason, freq and duty pots have to be swapped
             uint8_t index = map(duty_input, 0, 4095, 0, 17);
             uint32_t frequency = frequency_table[index];
+
             float duty_cycle = MIN_DUTY_PERCENT + ((MAX_DUTY_PERCENT - MIN_DUTY_PERCENT) * freq_input) / 4095.0;
+            uint8_t duty_index = map(freq_input, 0, 4095, 0, 17);
 
             // Account for offsets
-            if (duty_cycle < min_duty_cycles[index])
+            if (duty_cycle < min_duty_cycles[duty_index])
             {
-                duty_cycle = min_duty_cycles[index];
+                duty_cycle = min_duty_cycles[duty_index];
             }
-            if (duty_cycle > max_duty_cycles[index])
+            if (duty_cycle > max_duty_cycles[duty_index])
             {
-                duty_cycle = max_duty_cycles[index];
+                duty_cycle = max_duty_cycles[duty_index];
             }
 
             set_transmitter_freq_duty(slice_num_tx, tx_channel, frequency, duty_cycle);
