@@ -45,6 +45,7 @@ void core1_main()
         if (player.play == false && gui.controlMenu == false)
         {
             transmitt_off();
+            player.resetPlayer(); // make sure everything is off
         }
     }
 }
@@ -129,8 +130,15 @@ int main(int argc, char **argv)
             {
                 gui.midiGui = true;
                 gui.midiStartMenu = false;
-                player.play = true;
                 player.paused = false;
+
+                // If it is running, reset the state
+                if (player.play) {
+                    player.play = false;
+                    transmitt_off();
+                    sleep_ms(10);
+                }
+                player.play = true;
 
                 lcd.clear();
             }

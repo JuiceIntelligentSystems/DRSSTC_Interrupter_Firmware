@@ -161,7 +161,7 @@ CMakeFiles/pioasm.dir/ada_output.cpp.o: /home/pijuice/pico/pico-sdk/tools/pioasm
   /usr/include/errno.h \
   /usr/include/aarch64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h \
-  /usr/include/aarch64-linux-gnu/asm/errno.h \
+  /usr/lib/linux/uapi/arm64/asm/errno.h \
   /usr/include/asm-generic/errno.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/aarch64-linux-gnu/bits/types/error_t.h \
@@ -376,7 +376,7 @@ CMakeFiles/pioasm.dir/c_sdk_output.cpp.o: /home/pijuice/pico/pico-sdk/tools/pioa
   /usr/include/errno.h \
   /usr/include/aarch64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h \
-  /usr/include/aarch64-linux-gnu/asm/errno.h \
+  /usr/lib/linux/uapi/arm64/asm/errno.h \
   /usr/include/asm-generic/errno.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/aarch64-linux-gnu/bits/types/error_t.h \
@@ -465,7 +465,7 @@ CMakeFiles/pioasm.dir/gen/lexer.cpp.o: /home/pijuice/pico/pico-sdk/tools/pioasm/
   /usr/include/errno.h \
   /usr/include/aarch64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h \
-  /usr/include/aarch64-linux-gnu/asm/errno.h \
+  /usr/lib/linux/uapi/arm64/asm/errno.h \
   /usr/include/asm-generic/errno.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/aarch64-linux-gnu/bits/types/error_t.h \
@@ -813,7 +813,7 @@ CMakeFiles/pioasm.dir/gen/parser.cpp.o: /home/pijuice/pico/pico-sdk/tools/pioasm
   /usr/include/errno.h \
   /usr/include/aarch64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h \
-  /usr/include/aarch64-linux-gnu/asm/errno.h \
+  /usr/lib/linux/uapi/arm64/asm/errno.h \
   /usr/include/asm-generic/errno.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/aarch64-linux-gnu/bits/types/error_t.h \
@@ -1062,7 +1062,7 @@ CMakeFiles/pioasm.dir/hex_output.cpp.o: /home/pijuice/pico/pico-sdk/tools/pioasm
   /usr/include/errno.h \
   /usr/include/aarch64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h \
-  /usr/include/aarch64-linux-gnu/asm/errno.h \
+  /usr/lib/linux/uapi/arm64/asm/errno.h \
   /usr/include/asm-generic/errno.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/aarch64-linux-gnu/bits/types/error_t.h \
@@ -1284,7 +1284,7 @@ CMakeFiles/pioasm.dir/main.cpp.o: /home/pijuice/pico/pico-sdk/tools/pioasm/main.
   /usr/include/errno.h \
   /usr/include/aarch64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h \
-  /usr/include/aarch64-linux-gnu/asm/errno.h \
+  /usr/lib/linux/uapi/arm64/asm/errno.h \
   /usr/include/asm-generic/errno.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/aarch64-linux-gnu/bits/types/error_t.h \
@@ -1512,7 +1512,7 @@ CMakeFiles/pioasm.dir/pio_assembler.cpp.o: /home/pijuice/pico/pico-sdk/tools/pio
   /usr/include/errno.h \
   /usr/include/aarch64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h \
-  /usr/include/aarch64-linux-gnu/asm/errno.h \
+  /usr/lib/linux/uapi/arm64/asm/errno.h \
   /usr/include/asm-generic/errno.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/aarch64-linux-gnu/bits/types/error_t.h \
@@ -1754,7 +1754,7 @@ CMakeFiles/pioasm.dir/pio_disassembler.cpp.o: /home/pijuice/pico/pico-sdk/tools/
   /usr/include/errno.h \
   /usr/include/aarch64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h \
-  /usr/include/aarch64-linux-gnu/asm/errno.h \
+  /usr/lib/linux/uapi/arm64/asm/errno.h \
   /usr/include/asm-generic/errno.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/aarch64-linux-gnu/bits/types/error_t.h \
@@ -1955,7 +1955,7 @@ CMakeFiles/pioasm.dir/python_output.cpp.o: /home/pijuice/pico/pico-sdk/tools/pio
   /usr/include/errno.h \
   /usr/include/aarch64-linux-gnu/bits/errno.h \
   /usr/include/linux/errno.h \
-  /usr/include/aarch64-linux-gnu/asm/errno.h \
+  /usr/lib/linux/uapi/arm64/asm/errno.h \
   /usr/include/asm-generic/errno.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/aarch64-linux-gnu/bits/types/error_t.h \
@@ -2435,6 +2435,8 @@ CMakeFiles/pioasm.dir/python_output.cpp.o: /home/pijuice/pico/pico-sdk/tools/pio
 
 /usr/include/aarch64-linux-gnu/bits/types/__fpos64_t.h:
 
+/usr/lib/linux/uapi/arm64/asm/errno.h:
+
 /usr/include/aarch64-linux-gnu/bits/types/struct_FILE.h:
 
 /usr/include/time.h:
@@ -2456,8 +2458,6 @@ CMakeFiles/pioasm.dir/python_output.cpp.o: /home/pijuice/pico/pico-sdk/tools/pio
 /usr/include/linux/errno.h:
 
 /usr/include/aarch64-linux-gnu/bits/types/error_t.h:
-
-/usr/include/aarch64-linux-gnu/asm/errno.h:
 
 /usr/include/c++/12/bits/streambuf.tcc:
 

@@ -8,6 +8,7 @@
 #include <hardware/clocks.h>
 #include <pico/float.h>
 #include <math.h>
+#include <vector>
 #include "ff.h"
 #include "sd_card.h"
 #include "util.h"
@@ -16,6 +17,13 @@
 #define MIDI_NOTE_ON 0x90
 #define MIDI_NOTE_OFF 0x80
 #define MIDI_META_EVENT 0xFF
+
+struct NoteEvent
+{
+    uint8_t note;
+    uint8_t velocity;
+    uint32_t timestamp;
+};
 
 typedef struct
 {
@@ -70,6 +78,8 @@ public:
     const char *readFile(const char *);
     void pause();
     const char *getNoteName(uint8_t);
+    void resetPlayer();
+    void play_simultaneous_notes(const std::vector<NoteEvent> &notes);
 };
 
 bool Player::init()
@@ -86,7 +96,7 @@ bool Player::mountFileSystem()
 
     if (fr == FR_OK)
         return true;
-    
+
     return false;
 }
 
@@ -222,6 +232,8 @@ void Player::parse_midi_track(const MidiTrack *track)
     const uint8_t *data = track->data;
     uint32_t offset = 0;
 
+    std::vector<NoteEvent> simultaneous_notes;
+
     while (offset < track->length && play == true)
     {
         uint32_t delta_time = 0;
@@ -234,6 +246,12 @@ void Player::parse_midi_track(const MidiTrack *track)
         } while (value & 0x80);
 
         offset += delta_time;
+
+        if (!simultaneous_notes.empty() && delta_time > 0)
+        {
+            play_simultaneous_notes(simultaneous_notes);
+            simultaneous_notes.clear();
+        }
 
         // Read MIDI Event type
         uint8_t status_byte = *data++;
@@ -249,44 +267,21 @@ void Player::parse_midi_track(const MidiTrack *track)
 
             if ((status_byte & 0xF0) == MIDI_NOTE_ON && velocity > 0)
             {
-                // TODO: DISPLAY NOTE AND VELOCITY on LCD
-                note_name = getNoteName(note);
-                pitch = velocity;
-
-                // transmitt_music(note, velocity);
-
-                // Wait for duration of note
-                while (paused)
-                {
-                    transmitt_off();
-                    sleep_ms(10);
-                }
-                sleep_ms(delta_time);
+                // Add note on event to list of notes
+                simultaneous_notes.push_back({note, velocity, offset});
             }
             else
             {
-                // TODO: DISPLAY NOTE AND VELOCITY on LCD
-                note_name = getNoteName(note);
-                pitch = velocity;
-
-                // transmitt_music(note, 0);
-
-                // Wait for duration of note
-                while (paused)
-                {
-                    transmitt_off();
-                    sleep_ms(10);
-                }
-                sleep_ms(delta_time);
+                // Handle note off event
+                transmitt_music(note, 0);
             }
-            transmitt_music(note, velocity);
         }
         else if (status_byte == MIDI_META_EVENT)
         {
             uint8_t meta_type = *data++;
             uint8_t meta_length = *data++;
 
-            // Print Meta event Data
+            data += meta_length; // skip metadata
         }
         else
         {
@@ -299,7 +294,7 @@ const char *Player::getNoteName(uint8_t note_value)
 {
     if (note_value < 128)
         return note_names[note_value];
-    
+
     return "NA";
 }
 
@@ -339,6 +334,39 @@ const char *Player::readFile(const char *fileName)
     file_content[file_size] = '\0';
 
     return file_content;
+}
+
+void Player::resetPlayer()
+{
+    play = false;
+    paused = false;
+    pitch = 0;
+    note_name = nullptr;
+}
+
+void Player::play_simultaneous_notes(const std::vector<NoteEvent> &notes)
+{
+    for (const auto &note_event : notes)
+    {
+        // Transmitt each note
+        transmitt_music(note_event.note, note_event.velocity);
+
+        // Update GUI
+        note_name = getNoteName(note_event.note);
+        pitch = note_event.velocity;
+    }
+
+    // delay for the appropriate duration
+    uint32_t duration = notes.back().timestamp - notes.front().timestamp;
+    if (duration > 0)
+    {
+        while (paused)
+        {
+            transmitt_off();
+            sleep_ms(10);
+        }
+        sleep_ms(duration);
+    }
 }
 
 #endif

@@ -162,7 +162,7 @@ CMakeFiles/pioasm.dir/ada_output.cpp.o
  /usr/include/errno.h
  /usr/include/aarch64-linux-gnu/bits/errno.h
  /usr/include/linux/errno.h
- /usr/include/aarch64-linux-gnu/asm/errno.h
+ /usr/lib/linux/uapi/arm64/asm/errno.h
  /usr/include/asm-generic/errno.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/aarch64-linux-gnu/bits/types/error_t.h
@@ -378,7 +378,7 @@ CMakeFiles/pioasm.dir/c_sdk_output.cpp.o
  /usr/include/errno.h
  /usr/include/aarch64-linux-gnu/bits/errno.h
  /usr/include/linux/errno.h
- /usr/include/aarch64-linux-gnu/asm/errno.h
+ /usr/lib/linux/uapi/arm64/asm/errno.h
  /usr/include/asm-generic/errno.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/aarch64-linux-gnu/bits/types/error_t.h
@@ -468,7 +468,7 @@ CMakeFiles/pioasm.dir/gen/lexer.cpp.o
  /usr/include/errno.h
  /usr/include/aarch64-linux-gnu/bits/errno.h
  /usr/include/linux/errno.h
- /usr/include/aarch64-linux-gnu/asm/errno.h
+ /usr/lib/linux/uapi/arm64/asm/errno.h
  /usr/include/asm-generic/errno.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/aarch64-linux-gnu/bits/types/error_t.h
@@ -817,7 +817,7 @@ CMakeFiles/pioasm.dir/gen/parser.cpp.o
  /usr/include/errno.h
  /usr/include/aarch64-linux-gnu/bits/errno.h
  /usr/include/linux/errno.h
- /usr/include/aarch64-linux-gnu/asm/errno.h
+ /usr/lib/linux/uapi/arm64/asm/errno.h
  /usr/include/asm-generic/errno.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/aarch64-linux-gnu/bits/types/error_t.h
@@ -1067,7 +1067,7 @@ CMakeFiles/pioasm.dir/hex_output.cpp.o
  /usr/include/errno.h
  /usr/include/aarch64-linux-gnu/bits/errno.h
  /usr/include/linux/errno.h
- /usr/include/aarch64-linux-gnu/asm/errno.h
+ /usr/lib/linux/uapi/arm64/asm/errno.h
  /usr/include/asm-generic/errno.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/aarch64-linux-gnu/bits/types/error_t.h
@@ -1290,7 +1290,7 @@ CMakeFiles/pioasm.dir/main.cpp.o
  /usr/include/errno.h
  /usr/include/aarch64-linux-gnu/bits/errno.h
  /usr/include/linux/errno.h
- /usr/include/aarch64-linux-gnu/asm/errno.h
+ /usr/lib/linux/uapi/arm64/asm/errno.h
  /usr/include/asm-generic/errno.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/aarch64-linux-gnu/bits/types/error_t.h
@@ -1519,7 +1519,7 @@ CMakeFiles/pioasm.dir/pio_assembler.cpp.o
  /usr/include/errno.h
  /usr/include/aarch64-linux-gnu/bits/errno.h
  /usr/include/linux/errno.h
- /usr/include/aarch64-linux-gnu/asm/errno.h
+ /usr/lib/linux/uapi/arm64/asm/errno.h
  /usr/include/asm-generic/errno.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/aarch64-linux-gnu/bits/types/error_t.h
@@ -1762,7 +1762,7 @@ CMakeFiles/pioasm.dir/pio_disassembler.cpp.o
  /usr/include/errno.h
  /usr/include/aarch64-linux-gnu/bits/errno.h
  /usr/include/linux/errno.h
- /usr/include/aarch64-linux-gnu/asm/errno.h
+ /usr/lib/linux/uapi/arm64/asm/errno.h
  /usr/include/asm-generic/errno.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/aarch64-linux-gnu/bits/types/error_t.h
@@ -1964,7 +1964,7 @@ CMakeFiles/pioasm.dir/python_output.cpp.o
  /usr/include/errno.h
  /usr/include/aarch64-linux-gnu/bits/errno.h
  /usr/include/linux/errno.h
- /usr/include/aarch64-linux-gnu/asm/errno.h
+ /usr/lib/linux/uapi/arm64/asm/errno.h
  /usr/include/asm-generic/errno.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/aarch64-linux-gnu/bits/types/error_t.h
