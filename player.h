@@ -70,7 +70,6 @@ public:
     const char *readFile(const char *);
     void pause();
     const char *getNoteName(uint8_t);
-    void resetPlayer();
 };
 
 bool Player::init()
@@ -87,7 +86,7 @@ bool Player::mountFileSystem()
 
     if (fr == FR_OK)
         return true;
-
+    
     return false;
 }
 
@@ -254,7 +253,7 @@ void Player::parse_midi_track(const MidiTrack *track)
                 note_name = getNoteName(note);
                 pitch = velocity;
 
-                transmitt_music(note, velocity);
+                // transmitt_music(note, velocity);
 
                 // Wait for duration of note
                 while (paused)
@@ -270,7 +269,7 @@ void Player::parse_midi_track(const MidiTrack *track)
                 note_name = getNoteName(note);
                 pitch = velocity;
 
-                transmitt_music(note, 0);
+                // transmitt_music(note, 0);
 
                 // Wait for duration of note
                 while (paused)
@@ -280,6 +279,7 @@ void Player::parse_midi_track(const MidiTrack *track)
                 }
                 sleep_ms(delta_time);
             }
+            transmitt_music(note, velocity);
         }
         else if (status_byte == MIDI_META_EVENT)
         {
@@ -299,7 +299,7 @@ const char *Player::getNoteName(uint8_t note_value)
 {
     if (note_value < 128)
         return note_names[note_value];
-
+    
     return "NA";
 }
 
@@ -339,14 +339,6 @@ const char *Player::readFile(const char *fileName)
     file_content[file_size] = '\0';
 
     return file_content;
-}
-
-void Player::resetPlayer()
-{
-    play = false;
-    paused = false;
-    pitch = 0;
-    note_name = nullptr;
 }
 
 #endif
