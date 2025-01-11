@@ -43,6 +43,7 @@ void pwm_irq_handler();
 void transmitt_music(uint16_t, uint16_t);
 void transmitt_off();
 void set_transmitter(uint16_t, uint16_t);
+void reset_transmitter(void);
 
 void transmitter_init()
 {
@@ -198,6 +199,26 @@ void pwm_irq_handler()
 
         pwm_set = false;
     }
+}
+
+void reset_transmitter(void)
+{
+    pwm_off = false;
+    pwm_music = false;
+    pwm_set = false;
+
+    note_tx = 0;
+    velocity_tx = 0;
+    freq_input = 0;
+    duty_input = 0;
+
+    previous_pot_freq = 0;
+    previous_pot_duty = 0;
+
+    uint16_t slice_num_tx = pwm_gpio_to_slice_num(TC_TX);
+    uint16_t slice_num_stat = pwm_gpio_to_slice_num(STATUS_LED);
+    pwm_set_chan_level(slice_num_tx, pwm_gpio_to_channel(TC_TX), 0);
+    pwm_set_chan_level(slice_num_stat, pwm_gpio_to_channel(STATUS_LED), 0);
 }
 
 #endif

@@ -1,8 +1,8 @@
-# Install script for directory: /home/pijuice/pico/pico-sdk
+# Install script for directory: C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/pico-sdk
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/usr/local")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/DRSSTC_Firmware")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -34,14 +34,14 @@ endif()
 
 # Set default install directory permissions.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "/usr/bin/arm-none-eabi-objdump")
+  set(CMAKE_OBJDUMP "C:/Program Files/Raspberry Pi/Pico SDK v1.5.1/gcc-arm-none-eabi/bin/arm-none-eabi-objdump.exe")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/pijuice/Documents/PicoProjects/DRSSTC_Interrupter_Firmware/build/pico-sdk/tools/cmake_install.cmake")
-  include("/home/pijuice/Documents/PicoProjects/DRSSTC_Interrupter_Firmware/build/pico-sdk/src/cmake_install.cmake")
-  include("/home/pijuice/Documents/PicoProjects/DRSSTC_Interrupter_Firmware/build/pico-sdk/docs/cmake_install.cmake")
+  include("C:/Users/jtpat/Documents/GitHub/DRSSTC_Interrupter_Firmware/build/pico-sdk/tools/cmake_install.cmake")
+  include("C:/Users/jtpat/Documents/GitHub/DRSSTC_Interrupter_Firmware/build/pico-sdk/src/cmake_install.cmake")
+  include("C:/Users/jtpat/Documents/GitHub/DRSSTC_Interrupter_Firmware/build/pico-sdk/docs/cmake_install.cmake")
 
 endif()
 

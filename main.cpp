@@ -27,6 +27,9 @@ void core1_main()
     {
         if (player.play == true)
         {
+            // reset transmitter
+            reset_transmitter();
+
             // Read the Midi Header
             MidiHeader header;
             player.read_midi_header(gui.contentList[gui.current_selection], &header);
@@ -38,13 +41,19 @@ void core1_main()
                 player.read_midi_track(gui.contentList[gui.current_selection], &track, 0);
                 player.parse_midi_track(&track);
 
-                free(track.data);
+                player.cleanupTrackData(&track);
             }
-            player.play = false;
+
+            reset_transmitter();
+            player.resetPlayback();
+
+            // transmitt_off();
+            sleep_ms(100);
         }
         if (player.play == false && gui.controlMenu == false)
         {
             transmitt_off();
+            sleep_ms(1);
         }
     }
 }
@@ -129,8 +138,15 @@ int main(int argc, char **argv)
             {
                 gui.midiGui = true;
                 gui.midiStartMenu = false;
-                player.play = true;
                 player.paused = false;
+
+                if (player.play)
+                {
+                    player.play = false;
+                    transmitt_off();
+                    sleep_ms(10);
+                }
+                player.play = true;
 
                 lcd.clear();
             }
@@ -153,9 +169,14 @@ int main(int argc, char **argv)
             if (inputs.scroll() == true)
             {
                 player.play = false;
+                transmitt_off();
+                sleep_ms(10);
+
                 gui.midiGui = false;
                 gui.sdMenu = true;
                 displayMenu = true;
+
+                gui.current_selection = 0;
 
                 lcd.clear();
             }
@@ -164,6 +185,8 @@ int main(int argc, char **argv)
                 gui.midiGui = false;
                 gui.sdMenu = true;
                 displayMenu = true;
+
+                gui.current_selection = 0;
 
                 lcd.clear();
             }

@@ -1,4 +1,4 @@
-// Padded and checksummed version of: /home/pijuice/Documents/PicoProjects/DRSSTC_Interrupter_Firmware/build/pico-sdk/src/rp2_common/boot_stage2/bs2_default.bin
+// Padded and checksummed version of: C:/Users/jtpat/Documents/GitHub/DRSSTC_Interrupter_Firmware/build/pico-sdk/src/rp2_common/boot_stage2/bs2_default.bin
 
 .cpu cortex-m0plus
 .thumb

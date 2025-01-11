@@ -39,6 +39,9 @@ private:
     FILINFO fno;
     FIL fil;
 
+    uint32_t current_tempo = 500000; // Default to 120bpm
+    uint16_t time_division;
+
     // Lookup table for all notes and octaves
     const char *note_names[129] = {
         "C-1 ", "C#-1", "D-1 ", "D#-1", "E-1 ", "F-1 ", "F#-1", "G-1 ", "G#-1", "A-1 ", "A#-1", "B-1 ",
@@ -52,6 +55,8 @@ private:
         "C7  ", "C#7 ", "D7  ", "D#7 ", "E7  ", "F7  ", "F#7 ", "G7  ", "G#7 ", "A7  ", "A#7 ", "B7  ",
         "C8  ", "C#8 ", "D8  ", "D#8 ", "E8  ", "F8  ", "F#8 ", "G8  ", "G#8 ", "A8  ", "A#8 ", "B8  ",
         "C9  ", "C#9 ", "D9  ", "D#9 ", "E9  ", "F9  ", "F#9 ", "G9  ", "G#9 "};
+
+    uint32_t delta_to_ms(uint32_t delta);
 
 public:
     const char *note_name;
@@ -70,6 +75,9 @@ public:
     const char *readFile(const char *);
     void pause();
     const char *getNoteName(uint8_t);
+    void resetPlayback(void);
+    void cleanupTrackData(MidiTrack *);
+    void resetFileSystem();
 };
 
 bool Player::init()
@@ -86,7 +94,7 @@ bool Player::mountFileSystem()
 
     if (fr == FR_OK)
         return true;
-    
+
     return false;
 }
 
@@ -174,6 +182,7 @@ void Player::read_midi_header(const char *file_name, MidiHeader *header)
 
     // Read header
     f_read(&fil, header, sizeof(MidiHeader), NULL);
+    time_division = header->division; // store time division
 
     f_close(&fil);
 }
@@ -227,16 +236,20 @@ void Player::parse_midi_track(const MidiTrack *track)
         uint32_t delta_time = 0;
         uint8_t value;
 
+        // read variable length delta time
         do
         {
             value = *data++;
+            offset++;
             delta_time = (delta_time << 7) | (value & 0x7F);
         } while (value & 0x80);
 
-        offset += delta_time;
+        // Convert it to ms
+        uint32_t wait_time = delta_to_ms(delta_time);
 
         // Read MIDI Event type
         uint8_t status_byte = *data++;
+        offset++;
 
         // Check whether note-on or note-off
         // I spent way too long fixing bugs when all I had to do was change "*" to "&"
@@ -246,6 +259,7 @@ void Player::parse_midi_track(const MidiTrack *track)
             uint8_t channel = status_byte & 0x0F;
             uint8_t note = *data++;
             uint8_t velocity = *data++;
+            offset += 2;
 
             if ((status_byte & 0xF0) == MIDI_NOTE_ON && velocity > 0)
             {
@@ -261,7 +275,7 @@ void Player::parse_midi_track(const MidiTrack *track)
                     transmitt_off();
                     sleep_ms(10);
                 }
-                sleep_ms(delta_time);
+                sleep_ms(wait_time);
             }
             else
             {
@@ -277,29 +291,58 @@ void Player::parse_midi_track(const MidiTrack *track)
                     transmitt_off();
                     sleep_ms(10);
                 }
-                sleep_ms(delta_time);
+                sleep_ms(wait_time);
             }
+
             transmitt_music(note, velocity);
         }
         else if (status_byte == MIDI_META_EVENT)
         {
             uint8_t meta_type = *data++;
             uint8_t meta_length = *data++;
+            offset += 2;
 
-            // Print Meta event Data
+            // Handle tempo meta event
+            if (meta_type == 0x51 && meta_length == 3)
+            {
+                current_tempo = (*data << 16) | (*(data + 1) << 8) | *(data + 2);
+                data += meta_length;
+                offset += meta_length;
+            }
+            else
+            {
+                data += meta_length; // skip other events
+                offset += meta_length;
+            }
+
+            // Still need to wait
+            sleep_ms(wait_time);
         }
         else
         {
-            // Print other Midi events
+            if ((status_byte & 0xF0) == 0xC0 || (status_byte & 0xF0) == 0xD0)
+            {
+                data += 1; // Program change and Channel pressure use 1 data byte
+                offset += 1;
+            }
+            else
+            {
+                data += 2; // Most other messages use 2 data bytes
+                offset += 2;
+            }
+            sleep_ms(wait_time);
         }
     }
+
+    if (offset >= track->length)
+        play = false;
 }
 
 const char *Player::getNoteName(uint8_t note_value)
 {
     if (note_value < 128)
         return note_names[note_value];
-    
+
     return "NA";
 }
 
@@ -339,6 +382,43 @@ const char *Player::readFile(const char *fileName)
     file_content[file_size] = '\0';
 
     return file_content;
+}
+
+void Player::resetPlayback(void)
+{
+    play = false;
+    paused = false;
+    pitch = 0;
+    note_name = nullptr;
+
+    resetFileSystem();
+    reset_transmitter();
+}
+
+void Player::cleanupTrackData(MidiTrack *track)
+{
+    if (track && track->data)
+    {
+        free(track->data);
+        track->data = nullptr;
+        track->length = 0;
+    }
+}
+
+void Player::resetFileSystem()
+{
+    // Close Files and Directory
+    f_close(&fil);
+    f_closedir(&dir);
+
+    // Unmount and remount card
+    f_unmount("0:");
+    f_mount(&fs, "0:", 1);
+}
+
+uint32_t Player::delta_to_ms(uint32_t delta)
+{
+    return (delta * current_tempo) / (time_division * 1000);
 }
 
 #endif
