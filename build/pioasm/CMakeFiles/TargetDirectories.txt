@@ -1,3 +1,0 @@
-/home/pijuice/Documents/PicoProjects/DRSSTC_Interrupter_Firmware/build/pioasm/CMakeFiles/pioasm.dir
-/home/pijuice/Documents/PicoProjects/DRSSTC_Interrupter_Firmware/build/pioasm/CMakeFiles/edit_cache.dir
-/home/pijuice/Documents/PicoProjects/DRSSTC_Interrupter_Firmware/build/pioasm/CMakeFiles/rebuild_cache.dir
