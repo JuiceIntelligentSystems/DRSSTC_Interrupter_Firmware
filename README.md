@@ -2,7 +2,7 @@ TESLA COIL INTURRUPTER
 -
 
 The firmware for the Dual-Resonant-Solid-State-Tesla-Coil inturrupter board. It controls the tesla coil via a pwm signal generated at the fiber optic transmitter given the duty cycle and frequency potentiometers and midi files loaded onto teh SD Card.
-It uses the NO_OS_FATFS library found at: https://github.com/carlk3/no-OS-FatFS-SD-SPI-RPi-Pico by carlk3. 
+It uses the NO_OS_FATFS library found at: https://github.com/carlk3/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico by carlk3. 
 
 FEATURES
 -
