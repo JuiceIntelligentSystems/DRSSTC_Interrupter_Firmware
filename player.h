@@ -8,8 +8,9 @@
 #include <hardware/clocks.h>
 #include <pico/float.h>
 #include <math.h>
+#include "f_util.h"
+#include "hw_config.h"
 #include "ff.h"
-#include "sd_card.h"
 #include "util.h"
 #include "transmitter.h"
 

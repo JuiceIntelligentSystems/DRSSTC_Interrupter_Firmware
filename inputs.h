@@ -2,6 +2,7 @@
 #define INPUTS_H
 
 #include <pico/stdlib.h>
+#include <pico/time.h>
 #include <hardware/adc.h>
 #include "util.h"
 
@@ -25,6 +26,8 @@ private:
     unsigned long last_scroll_debounce_time = 0;
     unsigned long debounce_delay = 50;
 
+    uint32_t getTimeMs(void);
+
 public:
     void init_pots();
     void init_buttons();
@@ -34,6 +37,11 @@ public:
     bool scroll();
     void updateButtons();
 };
+
+uint32_t Inputs::getTimeMs(void)
+{
+    return to_ms_since_boot(get_absolute_time());
+}
 
 void Inputs::init_pots()
 {
@@ -71,9 +79,9 @@ bool Inputs::select()
     selReading = gpio_get(SEL_PIN);
 
     if (selReading != lastSelState)
-        last_sel_debounce_time = millis();
+        last_sel_debounce_time = getTimeMs();
 
-    if ((millis() - last_sel_debounce_time) > debounce_delay)
+    if ((getTimeMs() - last_sel_debounce_time) > debounce_delay)
     {
         if (selReading != selState)
         {
@@ -91,9 +99,9 @@ bool Inputs::scroll()
     scrollReading = gpio_get(SCROLL_PIN);
 
     if (scrollReading != lastScrollState)
-        last_scroll_debounce_time = millis();
+        last_scroll_debounce_time = getTimeMs();
 
-    if ((millis() - last_scroll_debounce_time) > debounce_delay)
+    if ((getTimeMs() - last_scroll_debounce_time) > debounce_delay)
     {
         if (scrollReading != scrollState)
         {

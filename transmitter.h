@@ -36,6 +36,9 @@ const float min_duty_cycles[18] = {
 const float max_duty_cycles[18] = {
     5, 5, 5, 5, 5, 5, 5, 5, 4.94, 4.83, 4.71, 4.58, 4.44, 4.28, 4.12, 3.94, 3.76, 3.76};
 
+// Utility
+int map(int, int, int, int, int);
+
 uint32_t set_transmitter_freq_duty(uint, uint, uint32_t, int);
 uint32_t set_transmitter_freq_duty(uint, uint, uint32_t, float);
 void transmitter_init();
@@ -44,6 +47,11 @@ void transmitt_music(uint16_t, uint16_t);
 void transmitt_off();
 void set_transmitter(uint16_t, uint16_t);
 void reset_transmitter(void);
+
+int map(int v, int a1, int a2, int b1, int b2)
+{
+    return b1 + (v - a1) * (b2 - b1) / (a2 - a1);
+}
 
 void transmitter_init()
 {
