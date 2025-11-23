@@ -86,7 +86,7 @@ void GUI::printControls()
     lcd.print("]");
 
     lcd.goto_pos(5, 2);
-    lcd.print("Duty Cycle");
+    lcd.print("Pulse Width");
 
     lcd.goto_pos(0, 3);
     lcd.print("[");

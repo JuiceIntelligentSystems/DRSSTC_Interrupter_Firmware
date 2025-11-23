@@ -11,8 +11,8 @@
 #define TC_TX 24
 #define STATUS_LED 25
 
-#define MAX_DUTY_PERCENT 5
-#define MIN_DUTY_PERCENT 0.05
+#define MAX_PULSE_WIDTH 400.f // us
+#define MIN_PULSE_WIDTH 30.f  // us
 
 volatile bool pwm_off = false;
 volatile bool pwm_music = false;
@@ -26,15 +26,9 @@ volatile uint16_t duty_input;
 
 uint16_t previous_pot_freq, previous_pot_duty;
 
-// Frequencies don't go below 15Hz at the moment
+// Store Range of frequencies supported by Tesla Coil
 const uint16_t frequency_table[18] = {
     15, 20, 25, 30, 35, 40, 45, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
-
-// When transferred across fiber optic, the data gets slightly offset
-const float min_duty_cycles[18] = {
-    0.05, 0.05, 0.15, 0.15, 0.15, 0.15, 0.15, 0.2, 0.2, 0.45, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8};
-const float max_duty_cycles[18] = {
-    5, 5, 5, 5, 5, 5, 5, 5, 4.94, 4.83, 4.71, 4.58, 4.44, 4.28, 4.12, 3.94, 3.76, 3.76};
 
 // Utility
 int map(int, int, int, int, int);
@@ -164,7 +158,8 @@ void pwm_irq_handler()
             // Map midi values to frequencies and duty cycles
             // Map to frequencies with formula: f=440*2^((n-69)/12)) - tuned A4 at 440Hz
             uint32_t frequency = 440 * pow(2, ((float)note_tx - 69.0) / 12.0);
-            float duty_cycle = MIN_DUTY_PERCENT + ((MAX_DUTY_PERCENT - MIN_DUTY_PERCENT) * velocity_tx) / 127.0;
+            float pulse_width = MIN_PULSE_WIDTH + ((MAX_PULSE_WIDTH - MIN_PULSE_WIDTH) * velocity_tx) / 127.0;
+            float duty_cycle = ((pulse_width / 1000000.f) / (1.f / frequency)) * 100.f;
 
             set_transmitter_freq_duty(slice_num_tx, tx_channel, frequency, duty_cycle);
             set_transmitter_freq_duty(slice_num_stat, stat_channel, frequency, duty_cycle);
@@ -182,22 +177,11 @@ void pwm_irq_handler()
         if (previous_pot_duty != freq_input || previous_pot_freq != duty_input)
         {
             // Map pot values to frequencies and duty cycles
-            // For some unknown reason, freq and duty pots have to be swapped
             uint8_t index = map(duty_input, 0, 4095, 0, 17);
             uint32_t frequency = frequency_table[index];
 
-            float duty_cycle = MIN_DUTY_PERCENT + ((MAX_DUTY_PERCENT - MIN_DUTY_PERCENT) * freq_input) / 4095.0;
-            uint8_t duty_index = map(freq_input, 0, 4095, 0, 17);
-
-            // Account for offsets
-            if (duty_cycle < min_duty_cycles[duty_index])
-            {
-                duty_cycle = min_duty_cycles[duty_index];
-            }
-            if (duty_cycle > max_duty_cycles[duty_index])
-            {
-                duty_cycle = max_duty_cycles[duty_index];
-            }
+            float pulse_width = MIN_PULSE_WIDTH + ((MAX_PULSE_WIDTH - MIN_PULSE_WIDTH) * freq_input) / 4095.0;
+            float duty_cycle = ((pulse_width / 1000000.f) / (1.f / (float)frequency)) * 100.f;
 
             set_transmitter_freq_duty(slice_num_tx, tx_channel, frequency, duty_cycle);
             set_transmitter_freq_duty(slice_num_stat, stat_channel, frequency, duty_cycle);
