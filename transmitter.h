@@ -11,7 +11,7 @@
 #define TC_TX 24
 #define STATUS_LED 25
 
-#define MAX_PULSE_WIDTH 400.f // us
+#define MAX_PULSE_WIDTH 100.f // us
 #define MIN_PULSE_WIDTH 30.f  // us
 
 volatile bool pwm_off = false;
