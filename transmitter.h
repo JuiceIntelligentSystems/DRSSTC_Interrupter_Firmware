@@ -153,13 +153,13 @@ void pwm_irq_handler()
     {
         // Make it only register notes C1-B5 so coil doesn't overload
         // In otherwords, limit frequencies from 32.70Hz to 987.77Hz
-        if (note_tx > 23 && note_tx < 84 && velocity_tx < 128)
+        if (note_tx > 23 && note_tx < 84 && velocity_tx < 128 && velocity_tx > 0)
         {
             // Map midi values to frequencies and duty cycles
             // Map to frequencies with formula: f=440*2^((n-69)/12)) - tuned A4 at 440Hz
             uint32_t frequency = 440 * pow(2, ((float)note_tx - 69.0) / 12.0);
-            float pulse_width = MIN_PULSE_WIDTH + ((MAX_PULSE_WIDTH - MIN_PULSE_WIDTH) * velocity_tx) / 127.0;
-            float duty_cycle = ((pulse_width / 1000000.f) / (1.f / frequency)) * 100.f;
+            float pulse_width = MIN_PULSE_WIDTH + ((MAX_PULSE_WIDTH - MIN_PULSE_WIDTH) * (float)velocity_tx) / 127.0;
+            float duty_cycle = ((pulse_width / 1000000.f) / (1.f / (float)frequency)) * 100.f;
 
             set_transmitter_freq_duty(slice_num_tx, tx_channel, frequency, duty_cycle);
             set_transmitter_freq_duty(slice_num_stat, stat_channel, frequency, duty_cycle);

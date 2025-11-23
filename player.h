@@ -200,7 +200,7 @@ void Player::read_midi_header(const char *file_name, MidiHeader *header)
 
     time_division = header->division; // store time division
 
-    printf("MIDI Header - Format: %u, Tracks: %u, Division: %u\n", 
+    printf("MIDI Header - Format: %u, Tracks: %u, Division: %u\n",
            header->format, header->tracks, header->division);
 
     f_close(&fil);
@@ -416,7 +416,7 @@ void Player::parse_midi_track(const MidiTrack *track)
             // This is a real status byte
             offset++;
             running_status = status_byte;
-            
+
             // Meta events and SysEx don't use running status
             if (status_byte == MIDI_META_EVENT || status_byte == 0xF0 || status_byte == 0xF7)
             {
@@ -445,12 +445,15 @@ void Player::parse_midi_track(const MidiTrack *track)
             printf("  NOTE %s: note=%u, velocity=%u, channel=%u\n",
                    (status_byte & 0xF0) == MIDI_NOTE_ON ? "ON" : "OFF", note, velocity, channel);
 
-            // TODO: DISPLAY NOTE AND VELOCITY on LCD
-            note_name = getNoteName(note);
-            pitch = velocity;
+            // Register the output only on note on event
+            if (velocity > 0)
+            {
+                note_name = getNoteName(note);
+                pitch = velocity;
+            }
 
             transmitt_music(note, velocity);
-
+            
             // Wait for duration of note
             while (paused)
             {
