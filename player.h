@@ -181,9 +181,27 @@ void Player::read_midi_header(const char *file_name, MidiHeader *header)
         return;
     }
 
-    // Read header
-    f_read(&fil, header, sizeof(MidiHeader), NULL);
+    // Read and skip "MThd" chunk identifier (4 bytes)
+    char chunk_id[4];
+    f_read(&fil, chunk_id, 4, NULL);
+
+    // Read and skip chunk size (4 bytes)
+    uint32_t chunk_size;
+    f_read(&fil, &chunk_size, 4, NULL);
+
+    // Read actual header (6 bytes) for format(2) number of tracks(2) and deltaTime(2)
+    uint8_t header_data[6];
+    f_read(&fil, header_data, 6, NULL);
+
+    // Parse header in big-endian format (MIDI uses big-endian)
+    header->format = (header_data[0] << 8) | header_data[1];
+    header->tracks = (header_data[2] << 8) | header_data[3];
+    header->division = (header_data[4] << 8) | header_data[5];
+
     time_division = header->division; // store time division
+
+    printf("MIDI Header - Format: %u, Tracks: %u, Division: %u\n", 
+           header->format, header->tracks, header->division);
 
     f_close(&fil);
 }
@@ -194,43 +212,158 @@ void Player::read_midi_track(const char *file_name, MidiTrack *track, uint32_t t
     fr = f_open(&fil, file_name, FA_READ);
     if (fr != FR_OK)
     {
+        printf("ERROR: Failed to open file\n");
         f_unmount("0:");
         return;
     }
 
-    // Skip header chunk
-    f_lseek(&fil, sizeof(MidiHeader));
+    // Read header to get actual header size
+    f_lseek(&fil, 0);
 
-    // Skip to specified track
-    for (uint32_t i = 0; i < track_number; i++)
+    char chunk_id[4];
+    uint32_t chunk_size;
+    UINT bytes_read;
+
+    // Read "MThd"
+    f_read(&fil, chunk_id, 4, &bytes_read);
+    if (bytes_read != 4)
     {
-        uint32_t track_length;
-        f_read(&fil, &track_length, sizeof(uint32_t), NULL);
-        f_lseek(&fil, f_tell(&fil) + track_length);
-    }
-
-    // Read track chunk length
-    f_read(&fil, &track->length, sizeof(uint32_t), NULL);
-
-    // Allocate memory for the track data
-    track->data = (uint8_t *)malloc(sizeof(track->length));
-    if (track->data == NULL)
-    {
+        printf("ERROR: Failed to read MThd chunk ID\n");
         f_close(&fil);
         f_unmount("0:");
         return;
     }
 
-    // Read track data
-    f_read(&fil, track->data, track->length, NULL);
+    f_read(&fil, &chunk_size, 4, &bytes_read);
+    if (bytes_read != 4)
+    {
+        printf("ERROR: Failed to read MThd chunk size\n");
+        f_close(&fil);
+        f_unmount("0:");
+        return;
+    }
 
-    f_close(&fil);
+    // Convert chunk size from big-endian
+    chunk_size = ((chunk_size >> 24) & 0xFF) |
+                 ((chunk_size >> 8) & 0xFF00) |
+                 ((chunk_size << 8) & 0xFF0000) |
+                 ((chunk_size << 24) & 0xFF000000);
+
+    printf("Header chunk size: %lu\n", chunk_size);
+
+    // Current position should be at 8, skip the actual header data
+    // New position = 8 + chunk_size
+    f_lseek(&fil, 8 + chunk_size);
+
+    // Now find the desired track by searching for "MTrk" chunks
+    uint32_t tracks_found = 0;
+
+    while (1)
+    {
+        uint32_t chunk_start = f_tell(&fil);
+
+        // Read chunk ID
+        f_read(&fil, chunk_id, 4, &bytes_read);
+        if (bytes_read != 4)
+        {
+            printf("ERROR: Failed to read chunk ID at position %lu\n", chunk_start);
+            f_close(&fil);
+            f_unmount("0:");
+            return;
+        }
+
+        // Read chunk size
+        f_read(&fil, &chunk_size, 4, &bytes_read);
+        if (bytes_read != 4)
+        {
+            printf("ERROR: Failed to read chunk size at position %lu\n", chunk_start + 4);
+            f_close(&fil);
+            f_unmount("0:");
+            return;
+        }
+
+        // Convert chunk size from big-endian
+        uint32_t chunk_size_le = ((chunk_size >> 24) & 0xFF) |
+                                 ((chunk_size >> 8) & 0xFF00) |
+                                 ((chunk_size << 8) & 0xFF0000) |
+                                 ((chunk_size << 24) & 0xFF000000);
+
+        printf("Found chunk at %lu: %c%c%c%c, size: %lu\n",
+               chunk_start, chunk_id[0], chunk_id[1], chunk_id[2], chunk_id[3], chunk_size_le);
+
+        // Check if this is an MTrk chunk
+        bool is_mtrk = (chunk_id[0] == 'M' && chunk_id[1] == 'T' &&
+                        chunk_id[2] == 'r' && chunk_id[3] == 'k');
+
+        if (is_mtrk)
+        {
+            // Found an MTrk chunk
+            if (tracks_found == track_number)
+            {
+                // This is the track we want
+                track->length = chunk_size_le;
+
+                // Safety check
+                if (track->length == 0 || track->length > 1048576)
+                {
+                    printf("ERROR: Invalid track length: %lu\n", track->length);
+                    f_close(&fil);
+                    f_unmount("0:");
+                    return;
+                }
+
+                // Allocate memory for the track data
+                track->data = (uint8_t *)malloc(track->length);
+                if (track->data == NULL)
+                {
+                    printf("ERROR: Failed to allocate %lu bytes for track data\n", track->length);
+                    f_close(&fil);
+                    f_unmount("0:");
+                    return;
+                }
+
+                // Read track data
+                fr = f_read(&fil, track->data, track->length, &bytes_read);
+                if (bytes_read != track->length)
+                {
+                    printf("ERROR: Failed to read track data. Read %u of %lu bytes\n", bytes_read, track->length);
+                    free(track->data);
+                    track->data = NULL;
+                    f_close(&fil);
+                    f_unmount("0:");
+                    return;
+                }
+
+                printf("Successfully read track %lu with length %lu\n", track_number, track->length);
+                f_close(&fil);
+                return;
+            }
+            tracks_found++;
+        }
+
+        // Move to next chunk
+        // Current position is after the chunk size field, so we need to skip chunk_size_le bytes
+        f_lseek(&fil, chunk_start + 8 + chunk_size_le);
+
+        // Safety check to prevent infinite loop
+        if (f_eof(&fil))
+        {
+            printf("ERROR: Reached end of file before finding track %lu\n", track_number);
+            f_close(&fil);
+            f_unmount("0:");
+            return;
+        }
+    }
 }
 
 void Player::parse_midi_track(const MidiTrack *track)
 {
     const uint8_t *data = track->data;
     uint32_t offset = 0;
+    uint32_t event_count = 0;
+    uint8_t running_status = 0;
+
+    printf("Starting MIDI playback, track length: %lu\n", track->length);
 
     while (offset < track->length && play == true)
     {
@@ -240,7 +373,13 @@ void Player::parse_midi_track(const MidiTrack *track)
         // read variable length delta time
         do
         {
-            value = *data++;
+            if (offset >= track->length)
+            {
+                printf("ERROR: Offset exceeded track length during delta time read\n");
+                play = false;
+                return;
+            }
+            value = data[offset];
             offset++;
             delta_time = (delta_time << 7) | (value & 0x7F);
         } while (value & 0x80);
@@ -248,95 +387,145 @@ void Player::parse_midi_track(const MidiTrack *track)
         // Convert it to ms
         uint32_t wait_time = delta_to_ms(delta_time);
 
+        if (offset >= track->length)
+        {
+            printf("ERROR: Offset exceeded track length after delta time read\n");
+            play = false;
+            return;
+        }
+
         // Read MIDI Event type
-        uint8_t status_byte = *data++;
-        offset++;
+        uint8_t status_byte = data[offset];
+
+        // Handle running status
+        if ((status_byte & 0x80) == 0)
+        {
+            // High bit not set - this is data, not a status byte
+            // Use running status from previous event
+            if (running_status == 0)
+            {
+                printf("ERROR: Running status but no previous status at offset %lu\n", offset);
+                play = false;
+                return;
+            }
+            status_byte = running_status;
+            // Don't increment offset - we'll use this byte as data
+        }
+        else
+        {
+            // This is a real status byte
+            offset++;
+            running_status = status_byte;
+            
+            // Meta events and SysEx don't use running status
+            if (status_byte == MIDI_META_EVENT || status_byte == 0xF0 || status_byte == 0xF7)
+            {
+                running_status = 0;
+            }
+        }
+
+        printf("Event %lu: offset=%lu, delta=%lu, wait_time=%lu, status=0x%02X\n",
+               event_count, offset - 1, delta_time, wait_time, status_byte);
 
         // Check whether note-on or note-off
-        // I spent way too long fixing bugs when all I had to do was change "*" to "&"
-        // raaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         if ((status_byte & 0xF0) == MIDI_NOTE_ON || (status_byte & 0xF0) == MIDI_NOTE_OFF)
         {
+            if (offset + 2 > track->length)
+            {
+                printf("ERROR: Not enough bytes for note event\n");
+                play = false;
+                return;
+            }
+
             uint8_t channel = status_byte & 0x0F;
-            uint8_t note = *data++;
-            uint8_t velocity = *data++;
+            uint8_t note = data[offset];
+            uint8_t velocity = data[offset + 1];
             offset += 2;
 
-            if ((status_byte & 0xF0) == MIDI_NOTE_ON && velocity > 0)
-            {
-                // TODO: DISPLAY NOTE AND VELOCITY on LCD
-                note_name = getNoteName(note);
-                pitch = velocity;
+            printf("  NOTE %s: note=%u, velocity=%u, channel=%u\n",
+                   (status_byte & 0xF0) == MIDI_NOTE_ON ? "ON" : "OFF", note, velocity, channel);
 
-                // transmitt_music(note, velocity);
-
-                // Wait for duration of note
-                while (paused)
-                {
-                    transmitt_off();
-                    sleep_ms(10);
-                }
-                sleep_ms(wait_time);
-            }
-            else
-            {
-                // TODO: DISPLAY NOTE AND VELOCITY on LCD
-                note_name = getNoteName(note);
-                pitch = velocity;
-
-                // transmitt_music(note, 0);
-
-                // Wait for duration of note
-                while (paused)
-                {
-                    transmitt_off();
-                    sleep_ms(10);
-                }
-                sleep_ms(wait_time);
-            }
+            // TODO: DISPLAY NOTE AND VELOCITY on LCD
+            note_name = getNoteName(note);
+            pitch = velocity;
 
             transmitt_music(note, velocity);
+
+            // Wait for duration of note
+            while (paused)
+            {
+                transmitt_off();
+                sleep_ms(10);
+            }
+            sleep_ms(wait_time);
         }
         else if (status_byte == MIDI_META_EVENT)
         {
-            uint8_t meta_type = *data++;
-            uint8_t meta_length = *data++;
+            if (offset + 2 > track->length)
+            {
+                printf("ERROR: Not enough bytes for meta event\n");
+                play = false;
+                return;
+            }
+
+            uint8_t meta_type = data[offset];
+            uint8_t meta_length = data[offset + 1];
             offset += 2;
+
+            printf("  META event: type=0x%02X, length=%u\n", meta_type, meta_length);
+
+            if (offset + meta_length > track->length)
+            {
+                printf("ERROR: Not enough bytes for meta event data\n");
+                play = false;
+                return;
+            }
 
             // Handle tempo meta event
             if (meta_type == 0x51 && meta_length == 3)
             {
-                current_tempo = (*data << 16) | (*(data + 1) << 8) | *(data + 2);
-                data += meta_length;
-                offset += meta_length;
-            }
-            else
-            {
-                data += meta_length; // skip other events
-                offset += meta_length;
+                current_tempo = (data[offset] << 16) | (data[offset + 1] << 8) | (data[offset + 2]);
+                printf("    Tempo updated: %lu microseconds per beat\n", current_tempo);
             }
 
-            // Still need to wait
-            sleep_ms(wait_time);
+            offset += meta_length;
+
+            // Still need to wait (even for meta events)
+            // sleep_ms(wait_time);
         }
         else
         {
+            printf("  Other event: 0x%02X\n", status_byte);
+
+            // Other MIDI Events
             if ((status_byte & 0xF0) == 0xC0 || (status_byte & 0xF0) == 0xD0)
             {
-                data += 1; // Program change and Channel pressure use 1 data byte
+                if (offset + 1 > track->length)
+                {
+                    printf("ERROR: Not enough bytes for program/channel event\n");
+                    play = false;
+                    return;
+                }
                 offset += 1;
             }
             else
             {
-                data += 2; // Most other messages use 2 data bytes
+                if (offset + 2 > track->length)
+                {
+                    printf("ERROR: Not enough bytes for 2-byte event\n");
+                    play = false;
+                    return;
+                }
                 offset += 2;
             }
-            sleep_ms(wait_time);
+            // sleep_ms(wait_time);
         }
+
+        event_count++;
     }
 
-    if (offset >= track->length)
-        play = false;
+    printf("MIDI playback finished. Events processed: %lu\n", event_count);
+    play = false;
 }
 
 const char *Player::getNoteName(uint8_t note_value)

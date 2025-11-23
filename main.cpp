@@ -34,20 +34,48 @@ void core1_main()
             MidiHeader header;
             player.read_midi_header(gui.contentList[gui.current_selection], &header);
 
-            //  Read and play the first track
+            // Try to find a track with notes (skip metadata-only tracks)
             MidiTrack track;
-            if (header.tracks > 0)
+            bool track_found = false;
+            
+            for (uint32_t track_num = 0; track_num < header.tracks && !track_found; track_num++)
             {
-                player.read_midi_track(gui.contentList[gui.current_selection], &track, 0);
-                player.parse_midi_track(&track);
+                player.read_midi_track(gui.contentList[gui.current_selection], &track, track_num);
+                
+                // Check if track has actual note events by scanning for NOTE_ON (0x90) or NOTE_OFF (0x80)
+                bool has_notes = false;
+                for (uint32_t i = 0; i < track.length - 1; i++)
+                {
+                    uint8_t byte = track.data[i];
+                    if ((byte & 0xF0) == 0x90 || (byte & 0xF0) == 0x80)
+                    {
+                        has_notes = true;
+                        break;
+                    }
+                }
+                
+                if (has_notes)
+                {
+                    printf("Found notes in track %lu\n", track_num);
+                    track_found = true;
+                    player.parse_midi_track(&track);
+                    player.cleanupTrackData(&track);
+                }
+                else
+                {
+                    printf("Track %lu has no notes, skipping\n", track_num);
+                    player.cleanupTrackData(&track);
+                }
+            }
 
-                player.cleanupTrackData(&track);
+            if (!track_found)
+            {
+                printf("ERROR: No track with notes found\n");
             }
 
             reset_transmitter();
             player.resetPlayback();
 
-            // transmitt_off();
             sleep_ms(100);
         }
         if (player.play == false && gui.controlMenu == false)
@@ -60,6 +88,8 @@ void core1_main()
 
 int main(int argc, char **argv)
 {
+    stdio_init_all();
+
     gui.init();
     player.init();
 
