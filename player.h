@@ -455,7 +455,7 @@ void Player::parse_midi_track(const MidiTrack *track)
             transmitt_music(note, velocity);
             
             // Wait for duration of note
-            while (paused)
+            while (paused && play == true)
             {
                 transmitt_off();
                 sleep_ms(10);
